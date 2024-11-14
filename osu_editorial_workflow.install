@@ -1,0 +1,54 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for the OSU Editorial Workflow
+ *   module.
+ */
+
+use Drupal\user\Entity\Role;
+
+/**
+ * Implements hook_install().
+ */
+function osu_editorial_workflow_install($is_syncing): void {
+  $editorial_roles = Role::loadMultiple([
+    'content_author',
+    'group_content_author',
+    'manage_content',
+    'architect',
+    'dx_administrator',
+  ]);
+  $administrative_roles = Role::loadMultiple([
+    'manage_site_configuration',
+    'architect',
+    'dx_administrator',
+  ]);
+  $editorial_permissions = [
+    'use editorial transition archive',
+    'use editorial transition create_new_draft',
+    'use editorial transition publish',
+    'use editorial transition archived_published',
+    'use editorial transition archived_draft',
+    'view any unpublished content',
+    'view latest version',
+    'use moderation sidebar',
+    'schedule publishing of nodes',
+    'schedule publishing of nodes',
+  ];
+  $administrative_permissions = [
+    'administer scheduler',
+  ];
+  /** @var Drupal\user\Entity\Role $role */
+  foreach ($editorial_roles as $role) {
+    foreach ($editorial_permissions as $permission) {
+      $role->grantPermission($permission);
+    }
+  }
+  /** @var Drupal\user\Entity\Role $role */
+  foreach ($administrative_roles as $role) {
+    foreach ($administrative_permissions as $permission) {
+      $role->grantPermission($permission);
+    }
+  }
+}
