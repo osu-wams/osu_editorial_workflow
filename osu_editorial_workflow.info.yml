@@ -2,6 +2,7 @@ name: 'OSU Editorial Workflow'
 type: module
 description: 'Provides support for Editorial Workflows of content.'
 package: OSU
+version: 1.0.0
 core_version_requirement: ^10 || ^11
 dependencies:
   - drupal:content_moderation
