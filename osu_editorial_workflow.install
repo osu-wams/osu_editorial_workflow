@@ -12,6 +12,36 @@ use Drupal\user\Entity\Role;
  * Implements hook_install().
  */
 function osu_editorial_workflow_install($is_syncing): void {
+  // Load page and story content types and enable scheduler.
+  $page_content_type = \Drupal::entityTypeManager()
+    ->getStorage('node_type')
+    ->load('page');
+  $story_content_type = \Drupal::entityTypeManager()
+    ->getStorage('node_type')
+    ->load('story');
+
+  $scheduler_settings = [
+    "expand_fieldset" => "when_required",
+    "fields_display_mode" => "vertical_tab",
+    "publish_enable" => TRUE,
+    "publish_past_date" => "error",
+    "publish_past_date_created" => FALSE,
+    "publish_required" => FALSE,
+    "publish_revision" => FALSE,
+    "publish_touch" => FALSE,
+    "show_message_after_update" => TRUE,
+    "unpublish_enable" => TRUE,
+    "unpublish_required" => FALSE,
+    "unpublish_revision" => FALSE,
+  ];
+  foreach ($scheduler_settings as $scheduler_setting_key => $scheduler_setting_value) {
+    $page_content_type->setThirdPartySetting('scheduler', $scheduler_setting_key, $scheduler_setting_value);
+    $story_content_type->setThirdPartySetting('scheduler', $scheduler_setting_key, $scheduler_setting_value);
+  }
+  $page_content_type->save();
+  $story_content_type->save();
+
+  // Load our roles to set permissions.
   $editorial_roles = Role::loadMultiple([
     'content_author',
     'group_content_author',
