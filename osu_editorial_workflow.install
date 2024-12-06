@@ -68,6 +68,7 @@ function osu_editorial_workflow_install($is_syncing): void {
   ];
   $administrative_permissions = [
     'administer scheduler',
+    'administer workflows',
   ];
   /** @var Drupal\user\Entity\Role $role */
   foreach ($editorial_roles as $role) {
