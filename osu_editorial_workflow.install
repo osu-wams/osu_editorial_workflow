@@ -43,7 +43,7 @@ function osu_editorial_workflow_install($is_syncing): void {
 
   // Load our roles to set permissions.
   $editorial_roles = Role::loadMultiple([
-    'content_author',
+    'content_authors',
     'group_content_author',
     'manage_content',
     'architect',
@@ -65,6 +65,7 @@ function osu_editorial_workflow_install($is_syncing): void {
     'use moderation sidebar',
     'schedule publishing of nodes',
     'schedule publishing of nodes',
+    'view scheduled content',
   ];
   $administrative_permissions = [
     'administer scheduler',
@@ -74,12 +75,14 @@ function osu_editorial_workflow_install($is_syncing): void {
   foreach ($editorial_roles as $role) {
     foreach ($editorial_permissions as $permission) {
       $role->grantPermission($permission);
+      $role->save();
     }
   }
   /** @var Drupal\user\Entity\Role $role */
   foreach ($administrative_roles as $role) {
     foreach ($administrative_permissions as $permission) {
       $role->grantPermission($permission);
+      $role->save();
     }
   }
 }
