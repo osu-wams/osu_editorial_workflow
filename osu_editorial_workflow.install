@@ -12,34 +12,67 @@ use Drupal\user\Entity\Role;
  * Implements hook_install().
  */
 function osu_editorial_workflow_install($is_syncing): void {
-  // Load page and story content types and enable scheduler.
-  $page_content_type = \Drupal::entityTypeManager()
-    ->getStorage('node_type')
-    ->load('page');
-  $story_content_type = \Drupal::entityTypeManager()
-    ->getStorage('node_type')
-    ->load('story');
-
-  $scheduler_settings = [
-    "expand_fieldset" => "when_required",
-    "fields_display_mode" => "vertical_tab",
-    "publish_enable" => TRUE,
-    "publish_past_date" => "error",
-    "publish_past_date_created" => FALSE,
-    "publish_required" => FALSE,
-    "publish_revision" => FALSE,
-    "publish_touch" => FALSE,
-    "show_message_after_update" => TRUE,
-    "unpublish_enable" => TRUE,
-    "unpublish_required" => FALSE,
-    "unpublish_revision" => FALSE,
+  $schedular_node_types = [
+    'page',
+    'story',
   ];
-  foreach ($scheduler_settings as $scheduler_setting_key => $scheduler_setting_value) {
-    $page_content_type->setThirdPartySetting('scheduler', $scheduler_setting_key, $scheduler_setting_value);
-    $story_content_type->setThirdPartySetting('scheduler', $scheduler_setting_key, $scheduler_setting_value);
+  foreach ($schedular_node_types as $node_type) {
+    // Load page and story content types and enable scheduler.
+    $node_entity = Drupal::entityTypeManager()
+      ->getStorage('node_type')
+      ->load($node_type);
+    $scheduler_settings = [
+      "expand_fieldset" => "when_required",
+      "fields_display_mode" => "vertical_tab",
+      "publish_enable" => TRUE,
+      "publish_past_date" => "error",
+      "publish_past_date_created" => FALSE,
+      "publish_required" => FALSE,
+      "publish_revision" => FALSE,
+      "publish_touch" => FALSE,
+      "show_message_after_update" => TRUE,
+      "unpublish_enable" => TRUE,
+      "unpublish_required" => FALSE,
+      "unpublish_revision" => FALSE,
+    ];
+    foreach ($scheduler_settings as $scheduler_setting_key => $scheduler_setting_value) {
+      $node_entity->setThirdPartySetting('scheduler', $scheduler_setting_key, $scheduler_setting_value);
+    }
+    $node_entity->save();
+    // Move the required fields to the proper spaces
+    /** @var Drupal\Core\Entity\Entity\EntityFormDisplay $form_display */
+    $form_display = Drupal::entityTypeManager()
+      ->getStorage('entity_form_display')
+      ->load("node.$node_type.default");
+
+    $date_time_updates = $form_display->getComponent('publish_on');
+    $date_time_updates['type'] = 'datetime_timestamp_no_default';
+    $date_time_updates['weight'] = 50;
+    $form_display->setComponent('publish_on', $date_time_updates);
+
+    $date_time_updates = $form_display->getComponent('unpublish_on');
+    $date_time_updates['type'] = 'datetime_timestamp_no_default';
+    $date_time_updates['weight'] = 60;
+    $form_display->setComponent('unpublish_on', $date_time_updates);
+
+    // Set the Publish and Unpublish states for the types that use moderation
+    $form_display->setComponent('publish_state', [
+      "type" => "scheduler_moderation",
+      "weight" => 55,
+      "region" => "content",
+      "settings" => [],
+      "third_party_settings" => [],
+    ]);
+    $form_display->setComponent('unpublish_state', [
+      "type" => "scheduler_moderation",
+      "weight" => 65,
+      "region" => "content",
+      "settings" => [],
+      "third_party_settings" => [],
+    ]);
+
+    $form_display->save();
   }
-  $page_content_type->save();
-  $story_content_type->save();
 
   // Load our roles to set permissions.
   $editorial_roles = Role::loadMultiple([
