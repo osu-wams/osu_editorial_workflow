@@ -1,0 +1,34 @@
+<?php
+
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+
+/**
+ * Implements hook_entity_base_field_info().
+ *
+ * Adds a new Field for collecting the Email of whom needs to be contacted for
+ * accessibility remediation.
+ */
+function osu_a11y_remediation_entity_base_field_info(EntityTypeInterface $entity_type) {
+  $fields = [];
+  if ($entity_type->id() === 'node') {
+    $fields['osu_a11y_remediation_email'] = BaseFieldDefinition::create('email')
+      ->setLabel(new TranslatableMarkup('Accessibility Remediation Contact'))
+      ->setDescription(new TranslatableMarkup('Email address to contact for accessibility remediation requests for this content.'))
+      ->setRevisionable(TRUE)
+      ->setTranslatable(TRUE)
+      ->setDisplayOptions('form', [
+        'type' => 'email_default',
+        'weight' => 10,
+        'settings' => [],
+      ])
+      ->setDisplayOptions('view', [
+        'region' => 'hidden',
+      ])
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', FALSE)
+      ->setRequired(FALSE);
+  }
+  return $fields;
+}

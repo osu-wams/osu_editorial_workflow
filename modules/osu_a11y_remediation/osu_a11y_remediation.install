@@ -1,0 +1,48 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function osu_a11y_remediation_install(): void {
+  $definition_update_manager = \Drupal::entityDefinitionUpdateManager();
+  $field_definition = \Drupal::service('entity_field.manager')
+    ->getFieldStorageDefinitions('node')['osu_a11y_remediation_email'];
+  $definition_update_manager->installFieldStorageDefinition(
+    'osu_a11y_remediation_email',
+    'node',
+    'osu_a11y_remediation',
+    $field_definition,
+  );
+
+  $display_repository = \Drupal::service('entity_display.repository');
+  $node_types = \Drupal::entityTypeManager()
+    ->getStorage('node_type')
+    ->loadMultiple();
+
+  foreach ($node_types as $bundle => $node_type) {
+    $display_repository->getFormDisplay('node', $bundle)
+      ->setComponent('osu_a11y_remediation_email', [
+        'type' => 'email_default',
+        'weight' => 50,
+      ])
+      ->save();
+
+    $display_repository->getViewDisplay('node', $bundle)
+      ->removeComponent('osu_a11y_remediation_email')
+      ->save();
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+//function osu_a11y_remediation_uninstall(): void {
+//  $definition_update_manager = \Drupal::entityDefinitionUpdateManager();
+//  $field = $definition_update_manager->getFieldStorageDefinition(
+//    'osu_a11y_remediation_email',
+//    'node'
+//  );
+//  if ($field) {
+//    $definition_update_manager->uninstallFieldStorageDefinition($field);
+//  }
+//}
