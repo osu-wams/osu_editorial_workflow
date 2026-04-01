@@ -36,13 +36,13 @@ function osu_a11y_remediation_install(): void {
 /**
  * Implements hook_uninstall().
  */
-//function osu_a11y_remediation_uninstall(): void {
-//  $definition_update_manager = \Drupal::entityDefinitionUpdateManager();
-//  $field = $definition_update_manager->getFieldStorageDefinition(
-//    'osu_a11y_remediation_email',
-//    'node'
-//  );
-//  if ($field) {
-//    $definition_update_manager->uninstallFieldStorageDefinition($field);
-//  }
-//}
+function osu_a11y_remediation_uninstall(): void {
+  $definition_update_manager = \Drupal::entityDefinitionUpdateManager();
+  $field = $definition_update_manager->getFieldStorageDefinition(
+    'osu_a11y_remediation_email',
+    'node'
+  );
+  if ($field) {
+    $definition_update_manager->uninstallFieldStorageDefinition($field);
+  }
+}
