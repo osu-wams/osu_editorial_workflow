@@ -2,8 +2,7 @@
 
 /**
  * @file
- * Install, update, and uninstall functions for the OSU Editorial Workflow
- *   module.
+ * Install file for osu_editorial_workflow module.
  */
 
 use Drupal\user\Entity\Role;
@@ -39,7 +38,7 @@ function osu_editorial_workflow_install($is_syncing): void {
       $node_entity->setThirdPartySetting('scheduler', $scheduler_setting_key, $scheduler_setting_value);
     }
     $node_entity->save();
-    // Move the required fields to the proper spaces
+    // Move the required fields to the proper spaces.
     /** @var Drupal\Core\Entity\Entity\EntityFormDisplay $form_display */
     $form_display = Drupal::entityTypeManager()
       ->getStorage('entity_form_display')
@@ -55,7 +54,7 @@ function osu_editorial_workflow_install($is_syncing): void {
     $date_time_updates['weight'] = 60;
     $form_display->setComponent('unpublish_on', $date_time_updates);
 
-    // Set the Publish and Unpublish states for the types that use moderation
+    // Set the Publish and Unpublish states for the types that use moderation.
     $form_display->setComponent('publish_state', [
       "type" => "scheduler_moderation",
       "weight" => 55,
