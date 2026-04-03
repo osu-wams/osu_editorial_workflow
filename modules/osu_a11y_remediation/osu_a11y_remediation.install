@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Installs the accessibility remediation email field.
+ */
+
+/**
  * Implements hook_install().
  */
 function osu_a11y_remediation_install(): void {
