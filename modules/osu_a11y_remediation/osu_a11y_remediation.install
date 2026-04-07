@@ -9,6 +9,24 @@
  * Implements hook_install().
  */
 function osu_a11y_remediation_install(): void {
+  // Add preserve state to moderation states.
+  $workflow_storage = \Drupal::entityTypeManager()
+    ->getStorage('workflow');
+  $workflows = $workflow_storage->loadByProperties(['id' => 'editorial']);
+  /** @var \Drupal\workflows\Entity\Workflow $workflow */
+  $workflow = $workflows ? array_values($workflows)[0] : NULL;
+  $type_plugin = $workflow->getTypePlugin();
+  $type_plugin->addState('preserve', 'Preserved');
+  // Get the configuration and set published and default revision flags.
+  $configuration = $type_plugin->getConfiguration();
+  $configuration['states']['preserve']['published'] = TRUE;
+  $configuration['states']['preserve']['default_revision'] = TRUE;
+  $type_plugin->setConfiguration($configuration);
+  $type_plugin->addTransition('preserve', 'Preserve', [
+    'published',
+    'archived',
+  ], 'preserve');
+  $workflow->save();
   $definition_update_manager = \Drupal::entityDefinitionUpdateManager();
   $field_definition = \Drupal::service('entity_field.manager')
     ->getFieldStorageDefinitions('node')['osu_a11y_remediation_email'];
@@ -35,19 +53,5 @@ function osu_a11y_remediation_install(): void {
     $display_repository->getViewDisplay('node', $bundle)
       ->removeComponent('osu_a11y_remediation_email')
       ->save();
-  }
-}
-
-/**
- * Implements hook_uninstall().
- */
-function osu_a11y_remediation_uninstall(): void {
-  $definition_update_manager = \Drupal::entityDefinitionUpdateManager();
-  $field = $definition_update_manager->getFieldStorageDefinition(
-    'osu_a11y_remediation_email',
-    'node'
-  );
-  if ($field) {
-    $definition_update_manager->uninstallFieldStorageDefinition($field);
   }
 }
