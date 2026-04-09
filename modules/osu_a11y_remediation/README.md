@@ -1,6 +1,10 @@
 # OSU Remediation Module
 
 This module provides a workflow for accessibility remediation requests.
+A new state is added to the Editorial workflow,
+Preserve—Public Record Exposed; Substitute Provided Upon Remediation Request—and
+a new transition is added to the workflow. This is only required on sites
+created before April 24, 2026.
 
 ## Installation
 
