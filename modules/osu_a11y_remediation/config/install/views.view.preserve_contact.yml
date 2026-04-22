@@ -122,7 +122,7 @@ display:
             preserve_tags: ''
             html: false
           element_type: h2
-          element_class: px-4
+          element_class: ''
           element_label_type: ''
           element_label_class: ''
           element_label_colon: false
@@ -145,7 +145,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: 'To request accessibility remediation for this content, please contact: {{ osu_a11y_remediation_email }}'
+            text: 'This content has been archived in accordance with university accessibility policy, procedures and standards. This page is kept for record‑keeping and isn’t actively maintained, so it may not meet current accessibility standards. If you need an accessible version, please send your request to: {{ osu_a11y_remediation_email }}'
             make_link: false
             path: ''
             absolute: false
@@ -171,7 +171,7 @@ display:
             preserve_tags: ''
             html: false
           element_type: p
-          element_class: p-4
+          element_class: ''
           element_label_type: ''
           element_label_class: ''
           element_label_colon: false
@@ -274,7 +274,7 @@ display:
         type: default
         options:
           grouping: {  }
-          row_class: 'bg-warning-subtle osu-shadow py-4 rounded-3'
+          row_class: 'bg-warning-subtle osu-shadow px-3 py-2 rounded-3'
           default_row_class: true
       row:
         type: fields
@@ -319,3 +319,4 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags: {  }
+
