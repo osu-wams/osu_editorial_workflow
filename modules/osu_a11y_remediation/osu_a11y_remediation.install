@@ -25,8 +25,7 @@ function osu_a11y_remediation_install(): void {
  * enrolled in content moderation.
  *
  * @param \Drupal\node\Entity\NodeType[] $node_types
- *
- * @return void
+ *   Array of node types.
  */
 function _osu_a11y_remediation_setup_workflow(array $node_types): void {
   $entity_type_manager = \Drupal::entityTypeManager();
@@ -67,8 +66,7 @@ function _osu_a11y_remediation_setup_workflow(array $node_types): void {
  * moderation workflow steps.
  *
  * @param \Drupal\node\Entity\NodeType[] $node_types
- *
- * @return void
+ *   Array of node types.
  */
 function _osu_a11y_add_field_to_node_type(array $node_types): void {
   $definition_update_manager = \Drupal::entityDefinitionUpdateManager();

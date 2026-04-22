@@ -18,7 +18,7 @@ use Symfony\Component\Validator\ConstraintValidator;
 final class AccessibilityRemediationEmailConstraintValidator extends ConstraintValidator {
 
   /**
-   * @{inheritdoc}
+   * {@inheritDoc}
    */
   public function validate(mixed $value, Constraint $constraint): void {
     if (empty($value)) {
