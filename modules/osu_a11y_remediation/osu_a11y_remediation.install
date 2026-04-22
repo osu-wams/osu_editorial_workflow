@@ -5,6 +5,8 @@
  * Installs the accessibility remediation email field.
  */
 
+use Drupal\user\Entity\Role;
+
 /**
  * Implements hook_install().
  */
@@ -16,6 +18,7 @@ function osu_a11y_remediation_install(): void {
     ->loadMultiple();
   _osu_a11y_remediation_setup_workflow($node_types);
   _osu_a11y_add_field_to_node_type($node_types);
+  _osu_a11y_grant_permissions();
 }
 
 /**
@@ -89,5 +92,20 @@ function _osu_a11y_add_field_to_node_type(array $node_types): void {
     $display_repository->getViewDisplay('node', $bundle_id)
       ->removeComponent('osu_a11y_remediation_email')
       ->save();
+  }
+}
+
+/**
+ * Grant Permissions to use the new transition/state.
+ */
+function _osu_a11y_grant_permissions(): void {
+  $roles = [
+    'manage_content',
+    'content_authors',
+    'group_content_author',
+  ];
+  foreach (Role::loadMultiple($roles) as $role) {
+    $role->grantPermission('use editorial transition preserve');
+    $role->save();
   }
 }
