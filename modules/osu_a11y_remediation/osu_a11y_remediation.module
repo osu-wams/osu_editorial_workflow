@@ -5,8 +5,10 @@
  * Module file.
  */
 
+use Drupal\block\BlockInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\node\NodeInterface;
 use Drupal\pathauto\PathautoState;
@@ -121,5 +123,57 @@ function osu_a11y_remediation_moderation_entity_validate(&$form, &$form_state): 
         ->isEmpty()) {
       $form_state->setErrorByName("new_state", t('The "Accessibility Remediation Contact" field is required when the moderation state is set to "Preserved".'));
     }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Set a message and disable the form for the "Preserve Contact" block.
+ */
+function osu_a11y_remediation_form_block_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  $block = $form_state->getFormObject()->getEntity();
+
+  if ($block->id() === 'madrone_views_block__preserve_contact_block_1') {
+    \Drupal::messenger()
+      ->addWarning(t('This block is managed by code and cannot be modified.'));
+    foreach (array_keys($form) as $key) {
+      if (str_starts_with($key, '#')) {
+        continue;
+      }
+      $form[$key]['#disabled'] = TRUE;
+    }
+    $form['actions']['#access'] = FALSE;
+  }
+}
+
+/**
+ * Implements hook_form_block_admin_display_form_alter().
+ *
+ * Remove the operations links (configure/delete) from the "Preserve Contact"
+ * block.
+ */
+function osu_a11y_remediation_form_block_admin_display_form_alter(array &$form, FormStateInterface $form_state): void {
+  $protected_block_id = 'madrone_views_block__preserve_contact_block_1';
+
+  if (isset($form['blocks'][$protected_block_id])) {
+    // Remove the operations links (configure/delete).
+    unset($form['blocks'][$protected_block_id]['operations']);
+    // Optionally, make the weight/region fields read-only.
+    $form['blocks'][$protected_block_id]['region-theme']['region']['#attributes']['disabled'] = TRUE;
+    $form['blocks'][$protected_block_id]['weight']['#attributes']['disabled'] = TRUE;
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_predelete() for block entities.
+ *
+ * Ensures that the "Preserve Contact" block cannot be deleted.
+ */
+function osu_a11y_remediation_block_predelete(BlockInterface $block): void {
+  if ($block->id() === 'madrone_views_block__preserve_contact_block_1'
+    && !\Drupal::isConfigSyncing()
+  ) {
+    throw new \RuntimeException('This block is managed by code and cannot be deleted.');
   }
 }
