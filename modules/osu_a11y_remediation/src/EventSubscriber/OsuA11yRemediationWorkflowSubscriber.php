@@ -115,7 +115,25 @@ final class OsuA11yRemediationWorkflowSubscriber implements EventSubscriberInter
       return;
     }
     if (!empty($pathAliasEntity)) {
-      $pathAliasEntity = reset($pathAliasEntity);
+      // Some sites have more than one alias for a node, check first.
+      if (count($pathAliasEntity) === 1) {
+        $pathAliasEntity = reset($pathAliasEntity);
+      }
+      else {
+        // Get the last key because that's the alias id that Drupal uses for the alias.
+        $lastAlias = array_key_last($pathAliasEntity);
+        foreach ($pathAliasEntity as $aid => $alias) {
+          if ($aid !== $lastAlias) {
+            // Throw them away.
+            $alias->delete();
+          }
+          else {
+            // Set our variable back to the last alias and move on.
+            $pathAliasEntity = $alias;
+          }
+        }
+      }
+
       $pathAliasEntity->setAlias($newAlias);
       $pathAliasEntity->save();
       $this->aliasManager->cacheClear($internalPath);
