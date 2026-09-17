@@ -159,9 +159,8 @@ function osu_a11y_remediation_form_block_admin_display_form_alter(array &$form, 
   if (isset($form['blocks'][$protected_block_id])) {
     // Remove the operations links (configure/delete).
     unset($form['blocks'][$protected_block_id]['operations']);
-    // Optionally, make the weight/region fields read-only.
+    // Make the region field read-only.
     $form['blocks'][$protected_block_id]['region-theme']['region']['#attributes']['disabled'] = TRUE;
-    $form['blocks'][$protected_block_id]['weight']['#attributes']['disabled'] = TRUE;
   }
 }
 
