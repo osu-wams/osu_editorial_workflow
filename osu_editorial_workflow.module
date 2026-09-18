@@ -5,11 +5,15 @@
  * Module file.
  */
 
+declare(strict_types=1);
+
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\content_moderation\Entity\ContentModerationState;
+use Drupal\Core\Hook\Attribute\LegacyHook;
 use Drupal\osu_editorial_workflow\Event\ContentModerationEvents;
 use Drupal\osu_editorial_workflow\Event\ContentModerationStateChangedEvent;
+use Drupal\osu_editorial_workflow\Hook\OsuEditorialWorkflowEntityBundleHooks;
 
 /**
  * Implements hook_ENTITY_TYPE_insert().
@@ -49,19 +53,22 @@ function _osu_editorial_workflow_content_moderation_state_helper(ContentModerati
     // When drupal.org/i/2873287 is merged, Core will dispatch these events.
     return;
   }
+
   if (class_exists('Drupal\workbench_email\EventSubscriber\ContentModerationStateChangedEvent')) {
     return;
   }
   $entity_type_id = $entity->get('content_entity_type_id')->getString();
   $language_code = $entity->get('langcode')->getString();
+
   try {
     /** @var \Drupal\Core\Entity\RevisionableStorageInterface $entity_storage */
-    $entity_storage = Drupal::entityTypeManager()->getStorage($entity_type_id);
-    $moderation_state_storage = Drupal::entityTypeManager()
+    $entity_storage = \Drupal::entityTypeManager()->getStorage($entity_type_id);
+    $moderation_state_storage = \Drupal::entityTypeManager()
       ->getStorage($entity->getEntityTypeId());
   }
   catch (InvalidPluginDefinitionException | PluginNotFoundException $exception) {
     \Drupal::logger('osu_editorial_workflow')->error($exception->getMessage());
+
     return;
   }
   /** @var \Drupal\Core\Entity\RevisionableStorageInterface $moderated_entity */
@@ -69,17 +76,20 @@ function _osu_editorial_workflow_content_moderation_state_helper(ContentModerati
     ->getString());
 
   /** @var \Drupal\content_moderation\ModerationInformationInterface $moderationInfo */
-  $moderationInfo = Drupal::service('content_moderation.moderation_information');
+  $moderationInfo = \Drupal::service('content_moderation.moderation_information');
   $isModerated = $moderationInfo->isModeratedEntity($moderated_entity);
+
   if (!$isModerated) {
     return;
   }
+
   if ($entity->getLoadedRevisionId() === NULL) {
     $original_state = FALSE;
   }
   else {
     /** @var \Drupal\content_moderation\Entity\ContentModerationState $original_content_moderation_state */
     $original_content_moderation_state = $moderation_state_storage->loadRevision($entity->getLoadedRevisionId());
+
     if (!$entity->isDefaultTranslation() && $original_content_moderation_state->hasTranslation($language_code)) {
       $original_content_moderation_state = $original_content_moderation_state->getTranslation($language_code);
     }
@@ -87,10 +97,19 @@ function _osu_editorial_workflow_content_moderation_state_helper(ContentModerati
       ->getString();
   }
   $new_state = $entity->get('moderation_state')->getString();
+
   if ($original_state === $new_state) {
     return;
   }
   $workflow = $entity->get('workflow')->getString();
   \Drupal::service('event_dispatcher')
     ->dispatch(new ContentModerationStateChangedEvent($moderated_entity, $new_state, $original_state, $workflow), ContentModerationEvents::STATE_CHANGED);
+}
+
+/**
+ * Implements hook_entity_bundle_create().
+ */
+#[LegacyHook]
+function osu_editorial_workflow_entity_bundle_create($entity_type_id, $bundle) {
+  \Drupal::service(OsuEditorialWorkflowEntityBundleHooks::class)->entityBundleCreate($entity_type_id, $bundle);
 }

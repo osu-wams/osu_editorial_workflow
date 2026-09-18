@@ -37,13 +37,14 @@ function _osu_a11y_remediation_setup_workflow(array $node_types): void {
 
   // Add preserve state to moderation states.
   $workflow_storage = $entity_type_manager->getStorage('workflow');
-  $workflows = $workflow_storage->loadByProperties(['id' => 'editorial']);
   /** @var \Drupal\workflows\Entity\Workflow $workflow */
-  $workflow = $workflows ? array_values($workflows)[0] : NULL;
-  if (!is_null($workflow)) {
+  $workflow = $workflow_storage->load('editorial');
+
+  if ($workflow !== NULL) {
     /** @var \Drupal\content_moderation\Plugin\WorkflowType\ContentModeration $type_plugin */
     $type_plugin = $workflow->getTypePlugin();
     $type_plugin->addState('preserve', 'Preserved');
+
     foreach ($node_types as $bundle_id => $bundle) {
       if (!$moderation_information->shouldModerateEntitiesOfBundle($bundle->getEntityType(), $bundle_id)) {
         $type_plugin->addEntityTypeAndBundle('node', $bundle_id);
@@ -82,6 +83,7 @@ function _osu_a11y_add_field_to_node_type(array $node_types): void {
     $field_definition,
   );
   $display_repository = \Drupal::service('entity_display.repository');
+
   foreach ($node_types as $bundle_id => $bundle) {
     $display_repository->getFormDisplay('node', $bundle_id)
       ->setComponent('osu_a11y_remediation_email', [
@@ -104,6 +106,7 @@ function _osu_a11y_grant_permissions(): void {
     'content_authors',
     'group_content_author',
   ];
+
   foreach (Role::loadMultiple($roles) as $role) {
     $role->grantPermission('use editorial transition preserve');
     $role->save();
