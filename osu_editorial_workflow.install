@@ -17,6 +17,7 @@ function osu_editorial_workflow_install($is_syncing): void {
   ];
   foreach ($schedular_node_types as $node_type) {
     // Load page and story content types and enable scheduler.
+    /* var \Drupal\Entity\Node $node_entity */
     $node_entity = \Drupal::entityTypeManager()
       ->getStorage('node_type')
       ->load($node_type);

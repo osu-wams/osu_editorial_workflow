@@ -103,6 +103,8 @@ function _osu_a11y_grant_permissions(): void {
     'manage_content',
     'content_authors',
     'group_content_author',
+    'architect',
+    'dx_administrator'
   ];
   foreach (Role::loadMultiple($roles) as $role) {
     $role->grantPermission('use editorial transition preserve');
