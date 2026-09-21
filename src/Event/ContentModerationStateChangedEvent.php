@@ -19,7 +19,7 @@ class ContentModerationStateChangedEvent extends Event {
   public function __construct(
     private readonly ContentEntityInterface $moderatedEntity,
     private readonly string $newState,
-    private readonly string $originalState,
+    private readonly false|string $originalState,
     private readonly string $workflow,
   ) {}
 
