@@ -10,6 +10,7 @@ declare(strict_types=1);
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\content_moderation\Entity\ContentModerationState;
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Hook\Attribute\LegacyHook;
 use Drupal\osu_editorial_workflow\Event\ContentModerationEvents;
 use Drupal\osu_editorial_workflow\Event\ContentModerationStateChangedEvent;
@@ -68,16 +69,21 @@ function _osu_editorial_workflow_content_moderation_state_helper(ContentModerati
       ->getStorage($entity->getEntityTypeId());
   }
   catch (InvalidPluginDefinitionException | PluginNotFoundException $exception) {
-    \Drupal::logger('osu_editorial_workflow')->error($exception->getMessage());
+    Drupal::logger('osu_editorial_workflow')->error($exception->getMessage());
 
     return;
   }
+
   /** @var \Drupal\Core\Entity\RevisionableStorageInterface $moderated_entity */
-  $moderated_entity = $entity_storage->loadRevision($entity->get('content_entity_revision_id')
+  $moderated_entity = $entity_storage->loadRevision((int) $entity->get('content_entity_revision_id')
     ->getString());
 
+  if (!$moderated_entity instanceof ContentEntityInterface) {
+    return;
+  }
+
   /** @var \Drupal\content_moderation\ModerationInformationInterface $moderationInfo */
-  $moderationInfo = \Drupal::service('content_moderation.moderation_information');
+  $moderationInfo = Drupal::service('content_moderation.moderation_information');
   $isModerated = $moderationInfo->isModeratedEntity($moderated_entity);
 
   if (!$isModerated) {
@@ -103,7 +109,7 @@ function _osu_editorial_workflow_content_moderation_state_helper(ContentModerati
     return;
   }
   $workflow = $entity->get('workflow')->getString();
-  \Drupal::service('event_dispatcher')
+  Drupal::service('event_dispatcher')
     ->dispatch(new ContentModerationStateChangedEvent($moderated_entity, $new_state, $original_state, $workflow), ContentModerationEvents::STATE_CHANGED);
 }
 
@@ -112,5 +118,5 @@ function _osu_editorial_workflow_content_moderation_state_helper(ContentModerati
  */
 #[LegacyHook]
 function osu_editorial_workflow_entity_bundle_create($entity_type_id, $bundle) {
-  \Drupal::service(OsuEditorialWorkflowEntityBundleHooks::class)->entityBundleCreate($entity_type_id, $bundle);
+  Drupal::service(OsuEditorialWorkflowEntityBundleHooks::class)->entityBundleCreate($entity_type_id, $bundle);
 }
