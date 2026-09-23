@@ -6,6 +6,7 @@ namespace Drupal\osu_editorial_workflow\Hook;
 
 use Drupal\content_moderation\ModerationInformationInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Hook\Attribute\Hook;
 
 /**
  * Hooks for Entity Bundles.

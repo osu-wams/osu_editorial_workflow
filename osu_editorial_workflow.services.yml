@@ -4,3 +4,5 @@ services:
 
   Drupal\osu_editorial_workflow\Hook\OsuEditorialWorkflowEntityBundleHooks:
     class: Drupal\osu_editorial_workflow\Hook\OsuEditorialWorkflowEntityBundleHooks
+  Drupal\osu_editorial_workflow\Hook\OsuEditorialWorkflowContentModerationHooks:
+    class: Drupal\osu_editorial_workflow\Hook\OsuEditorialWorkflowContentModerationHooks

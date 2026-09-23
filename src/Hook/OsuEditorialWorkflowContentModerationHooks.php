@@ -8,9 +8,10 @@ use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\content_moderation\Entity\ContentModerationStateInterface;
 use Drupal\content_moderation\ModerationInformationInterface;
-use Drupal\Core\DependencyInjection\AutowireTrait;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Hook\Attribute\Hook;
+use Drupal\Core\Logger\LoggerChannelTrait;
 use Drupal\osu_editorial_workflow\Event\ContentModerationEvents;
 use Drupal\osu_editorial_workflow\Event\ContentModerationStateChangedEvent;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -20,7 +21,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
  */
 class OsuEditorialWorkflowContentModerationHooks {
 
-  use AutowireTrait;
+  use LoggerChannelTrait;
 
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
@@ -30,7 +31,22 @@ class OsuEditorialWorkflowContentModerationHooks {
 
   /**
    * Implements hook_ENTITY_TYPE_insert and hook_ENTITY_TYPE_update.
+   *
+   * Handles content moderation state changes for editorial workflows.
+   *
+   * This helper method processes changes in moderation states for entities
+   * and dispatches the appropriate events when relevant. It ensures support
+   * for Drupal's content moderation and custom plugins during state changes.
+   * When https://www.drupal.org/i/2873287 is merged, this method will be
+   * deprecated and replaced by the core event system.
+   *
+   * @param \Drupal\content_moderation\Entity\ContentModerationState $entity
+   *   The content moderation state entity containing the changes. It includes
+   *   moderation state information, workflow details, and associated entity
+   *   data to determine whether moderation-related actions should occur.
    */
+  #[Hook('content_moderation_state_insert')]
+  #[Hook('content_moderation_state_update')]
   public function onModerationStateChange(ContentModerationStateInterface $entity): void {
     if (class_exists('\Drupal\content_moderation\Event\ContentModerationStateChangedEvent')) {
       // When drupal.org/i/2873287 is merged, Core will dispatch these events.
@@ -40,24 +56,21 @@ class OsuEditorialWorkflowContentModerationHooks {
     if (class_exists('\Drupal\workbench_email\EventSubscriber\ContentModerationStateChangedEvent')) {
       return;
     }
-    $entity_type_id = $entity->get('content_entity_type_id')->getString();
     $language_code = $entity->get('langcode')->getString();
 
     try {
-      /** @var \Drupal\Core\Entity\RevisionableStorageInterface $entity_storage */
-      $entity_storage = \Drupal::entityTypeManager()->getStorage($entity_type_id);
-      /** @var \Drupal\Core\Entity\RevisionableStorageInterface $moderation_state_storage */
-      $moderation_state_storage = \Drupal::entityTypeManager()
-        ->getStorage($entity->getEntityTypeId());
+      /** @var \Drupal\Core\Entity\RevisionableStorageInterface $entityStorage */
+      $entityStorage = $this->entityTypeManager->getStorage($entity->get('content_entity_type_id')->getString());
+      /** @var \Drupal\Core\Entity\RevisionableStorageInterface $moderationStateStorage */
+      $moderationStateStorage = $this->entityTypeManager->getStorage($entity->getEntityTypeId());
     }
     catch (InvalidPluginDefinitionException | PluginNotFoundException $exception) {
-      \Drupal::logger('osu_editorial_workflow')->error($exception->getMessage());
+      $this->getLogger('osu_editorial_workflow')->error($exception->getMessage());
 
       return;
     }
-    /** @var \Drupal\Core\Entity\RevisionableStorageInterface $moderated_entity */
-    $moderated_entity = $entity_storage->loadRevision((int) $entity->get('content_entity_revision_id')
-      ->getString());
+    $revisionId = (int) $entity->get('content_entity_revision_id')->getString();
+    $moderated_entity = $entityStorage->loadRevision($revisionId);
 
     if (!$moderated_entity instanceof ContentEntityInterface) {
       return;
@@ -70,25 +83,29 @@ class OsuEditorialWorkflowContentModerationHooks {
     }
 
     if ($entity->getLoadedRevisionId() === NULL) {
-      $original_state = FALSE;
+      $originalState = FALSE;
     }
     else {
-      /** @var \Drupal\content_moderation\Entity\ContentModerationState $original_content_moderation_state */
-      $original_content_moderation_state = $moderation_state_storage->loadRevision($entity->getLoadedRevisionId());
+      /** @var \Drupal\content_moderation\Entity\ContentModerationState $originalContentModerationState */
+      $originalContentModerationState = $moderationStateStorage->loadRevision($entity->getLoadedRevisionId());
 
-      if (!$entity->isDefaultTranslation() && $original_content_moderation_state->hasTranslation($language_code)) {
-        $original_content_moderation_state = $original_content_moderation_state->getTranslation($language_code);
+      if (!$originalContentModerationState instanceof ContentModerationStateInterface) {
+        return;
       }
-      $original_state = $original_content_moderation_state->get('moderation_state')
+
+      if (!$entity->isDefaultTranslation() && $originalContentModerationState->hasTranslation($language_code)) {
+        $originalContentModerationState = $originalContentModerationState->getTranslation($language_code);
+      }
+      $originalState = $originalContentModerationState->get('moderation_state')
         ->getString();
     }
-    $new_state = $entity->get('moderation_state')->getString();
+    $newState = $entity->get('moderation_state')->getString();
 
-    if ($original_state === $new_state) {
+    if ($originalState === $newState) {
       return;
     }
     $workflow = $entity->get('workflow')->getString();
-    $this->eventDispatcher->dispatch(new ContentModerationStateChangedEvent($moderated_entity, $new_state, $original_state, $workflow), ContentModerationEvents::STATE_CHANGED);
+    $this->eventDispatcher->dispatch(new ContentModerationStateChangedEvent($moderated_entity, $newState, $originalState, $workflow), ContentModerationEvents::STATE_CHANGED);
   }
 
 }
